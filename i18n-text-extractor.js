@@ -38,13 +38,13 @@
  * - {{ }} 会转化为{ }
  * - author: CalmSeas
  */
-
 const fs   = require('fs');
 const path = require('path');
+require('ts-node/register/transpile-only');
 
 // ---------- 配置 ----------
 const ROOT_DIR    = path.resolve(__dirname, '../src');     // 要遍历的根目录
-const OUTPUT_DIR  = path.resolve(__dirname, './lang/locales');   // .ts 输出目录 一般在后面加一个 en zh 等语言
+const OUTPUT_DIR  = path.resolve(__dirname, './lang/locales');   // .ts 输出目录
 // ----------------------------------
 
 // 递归获取目录下全部 .vue 文件
@@ -69,7 +69,7 @@ function getAllTemplateContent(html) {
 
 // 提取文本，生成合法唯一 key 的对象
 function extractTextToObj(html) {
-  const lines = [...html.matchAll(/>([^<>]+?)</g)].map(m => m[1].trim()).filter(Boolean);
+  const lines = [...html.matchAll(/>([^<>]+?)</g)].map(m => m[1].trim()).filter(Boolean).filter(t => !/\$\{[^}]+\}/.test(t));
   const result = {};
   const keyCount = {};
 
@@ -94,13 +94,15 @@ function extractTextToObj(html) {
 
 // 生成 .ts 文件内容
 function generateTsContent(obj) {
-  let ts = 'const documentation = {\n';
+  let ts = 'export default{\n';
   for (const [k, v] of Object.entries(obj)) {
-    ts += `  ${k}: ${v},\n`;
+    const safeKey = JSON.stringify(k);          // -> "showActionText"
+    ts += `  ${safeKey}: ${v},\n`;
   }
-  ts += '};\n\nexport default documentation;\n';
+  ts += '};';
   return ts;
 }
+
 
 // 写入 .ts 文件
 function writeToFile(outputPath, content) {
@@ -124,6 +126,7 @@ function main() {
     const obj = extractTextToObj(template);
     const tsContent = generateTsContent(obj);
 
+    // 相对路径替换 .vue 为 .ts
     const relativePath = path.relative(ROOT_DIR, file).replace(/\.vue$/, '.ts');
     const outputPath = path.join(OUTPUT_DIR, relativePath);
 
