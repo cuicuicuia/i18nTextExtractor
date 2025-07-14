@@ -1,4 +1,4 @@
-# 🈶 i18n Text Extractor for Vue
+#  i18n Text Extractor for Vue
 
 > 自动提取 Vue `<template>` 中的文本，并生成国际化语言文件（`.ts` 格式）
 
